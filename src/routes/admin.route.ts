@@ -1,0 +1,22 @@
+import { Router } from "express";
+import { authAdmin } from "../middleware/auth.middleware.js";
+import { createDefaultTask, createNewTask,createDailyTask, getDefaultTasks, updateDefaultTask, deleteDefaultTask, getTodayDailyTasksForAdmin, getOperators, updateDailyTask, getNewTask, updateNewTask, deleteNewTask,} from "../controller/admin.controller.js";
+
+
+const adminRouter = Router();
+
+adminRouter.post("/createDefault", authAdmin, createDefaultTask);
+adminRouter.get("/getDefaultTasks", authAdmin, getDefaultTasks);
+adminRouter.patch("/updateDefaultTask/:id", authAdmin, updateDefaultTask);
+adminRouter.delete("/deleteDefaultTask/:id", authAdmin, deleteDefaultTask);
+adminRouter.post("/createNew", authAdmin, createNewTask);
+adminRouter.post("/createDailyTask", authAdmin, createDailyTask);
+adminRouter.get("/getTodayDailyTasks", authAdmin, getTodayDailyTasksForAdmin);
+adminRouter.get("/getOperators", authAdmin, getOperators);
+adminRouter.patch("/updateDailyTask/:id", authAdmin, updateDailyTask);
+adminRouter.get("/getNewTask",authAdmin,getNewTask);
+adminRouter.patch("/updateNewTask/:id",authAdmin,updateNewTask)
+adminRouter.delete("/deleteNewTask/:id",authAdmin,deleteNewTask);
+
+
+export default adminRouter;

@@ -37,9 +37,6 @@ CREATE TABLE "default_tasks" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
-    "isCompleted" BOOLEAN NOT NULL DEFAULT false,
-    "priority" "Priority" NOT NULL DEFAULT 'LOW',
-    "status" "TaskStatus" NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "adminId" TEXT NOT NULL,
@@ -52,8 +49,9 @@ CREATE TABLE "daily_task_instances" (
     "id" TEXT NOT NULL,
     "taskDate" TIMESTAMP(3) NOT NULL,
     "isCompleted" BOOLEAN NOT NULL DEFAULT false,
+    "priority" "Priority" NOT NULL DEFAULT 'LOW',
+    "status" "TaskStatus" NOT NULL DEFAULT 'PENDING',
     "defaultTaskId" TEXT NOT NULL,
-    "operatorId" TEXT NOT NULL,
 
     CONSTRAINT "daily_task_instances_pkey" PRIMARY KEY ("id")
 );
@@ -71,9 +69,24 @@ CREATE TABLE "new_tasks" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "adminId" TEXT NOT NULL,
-    "operatorId" TEXT NOT NULL,
 
     CONSTRAINT "new_tasks_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "_DailyTaskOperators" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_DailyTaskOperators_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateTable
+CREATE TABLE "_NewTaskOperators" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_NewTaskOperators_AB_pkey" PRIMARY KEY ("A","B")
 );
 
 -- CreateIndex
@@ -83,7 +96,13 @@ CREATE UNIQUE INDEX "admin_email_key" ON "admin"("email");
 CREATE UNIQUE INDEX "operation_email_key" ON "operation"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "daily_task_instances_taskDate_defaultTaskId_operatorId_key" ON "daily_task_instances"("taskDate", "defaultTaskId", "operatorId");
+CREATE UNIQUE INDEX "daily_task_instances_taskDate_defaultTaskId_key" ON "daily_task_instances"("taskDate", "defaultTaskId");
+
+-- CreateIndex
+CREATE INDEX "_DailyTaskOperators_B_index" ON "_DailyTaskOperators"("B");
+
+-- CreateIndex
+CREATE INDEX "_NewTaskOperators_B_index" ON "_NewTaskOperators"("B");
 
 -- AddForeignKey
 ALTER TABLE "default_tasks" ADD CONSTRAINT "default_tasks_adminId_fkey" FOREIGN KEY ("adminId") REFERENCES "admin"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -92,10 +111,16 @@ ALTER TABLE "default_tasks" ADD CONSTRAINT "default_tasks_adminId_fkey" FOREIGN 
 ALTER TABLE "daily_task_instances" ADD CONSTRAINT "daily_task_instances_defaultTaskId_fkey" FOREIGN KEY ("defaultTaskId") REFERENCES "default_tasks"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "daily_task_instances" ADD CONSTRAINT "daily_task_instances_operatorId_fkey" FOREIGN KEY ("operatorId") REFERENCES "operation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "new_tasks" ADD CONSTRAINT "new_tasks_adminId_fkey" FOREIGN KEY ("adminId") REFERENCES "admin"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "new_tasks" ADD CONSTRAINT "new_tasks_operatorId_fkey" FOREIGN KEY ("operatorId") REFERENCES "operation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "_DailyTaskOperators" ADD CONSTRAINT "_DailyTaskOperators_A_fkey" FOREIGN KEY ("A") REFERENCES "daily_task_instances"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_DailyTaskOperators" ADD CONSTRAINT "_DailyTaskOperators_B_fkey" FOREIGN KEY ("B") REFERENCES "operation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_NewTaskOperators" ADD CONSTRAINT "_NewTaskOperators_A_fkey" FOREIGN KEY ("A") REFERENCES "new_tasks"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_NewTaskOperators" ADD CONSTRAINT "_NewTaskOperators_B_fkey" FOREIGN KEY ("B") REFERENCES "operation"("id") ON DELETE CASCADE ON UPDATE CASCADE;

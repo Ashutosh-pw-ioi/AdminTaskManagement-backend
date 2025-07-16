@@ -13,7 +13,7 @@ async function main() {
             phoneNumber: '9876543210',
         },
     });
-    const operator = await prisma.operationTeamMember.create({
+    const operator1 = await prisma.operationTeamMember.create({
         data: {
             name: 'Operator One',
             email: 'operator1@example.com',
@@ -21,12 +21,18 @@ async function main() {
             phoneNumber: '9123456789',
         },
     });
+    const operator2 = await prisma.operationTeamMember.create({
+        data: {
+            name: 'Operator Two',
+            email: 'operator2@example.com',
+            password: operatorPassword,
+            phoneNumber: '9876543211',
+        },
+    });
     const defaultTask = await prisma.defaultTask.create({
         data: {
             title: 'Check inventory',
             description: 'Make sure all shelves are stocked',
-            priority: Priority.MEDIUM,
-            status: TaskStatus.PENDING,
             adminId: admin.id,
         },
     });
@@ -34,18 +40,30 @@ async function main() {
         data: {
             taskDate: new Date(),
             defaultTaskId: defaultTask.id,
-            operatorId: operator.id,
+            priority: Priority.MEDIUM,
+            status: TaskStatus.IN_PROGRESS,
+            operators: {
+                connect: [
+                    { id: operator1.id },
+                    { id: operator2.id },
+                ],
+            },
         },
     });
     await prisma.newTask.create({
         data: {
             title: 'Urgent package delivery',
             description: 'Deliver package to client X',
-            dueDate: new Date(Date.now() + 86400000), // tomorrow
+            dueDate: new Date(Date.now() + 86400000),
             priority: Priority.HIGH,
             status: TaskStatus.IN_PROGRESS,
             adminId: admin.id,
-            operatorId: operator.id,
+            operators: {
+                connect: [
+                    { id: operator1.id },
+                    { id: operator2.id },
+                ],
+            },
         },
     });
     console.log('🌱 Database seeded successfully!');

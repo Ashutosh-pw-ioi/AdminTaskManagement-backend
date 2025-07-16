@@ -6,97 +6,97 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 enum Priority {
   LOW
   MEDIUM
   HIGH
 }
+
 enum TaskStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
 }
-model Admin {
-  id            String         @id @default(uuid())
-  number        String
-  email         String         @unique
-  password      String
-  gender        String
-  phoneNumber   String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
 
-  defaultTasks  DefaultTask[]
-  newTasks      NewTask[]
+model Admin {
+  id          String   @id @default(uuid())
+  number      String
+  email       String   @unique
+  password    String
+  gender      String
+  phoneNumber String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  defaultTasks DefaultTask[]
+  newTasks     NewTask[]
 
   @@map("admin")
 }
 
 model OperationTeamMember {
-  id          String              @id @default(uuid())
-  name        String
-  email       String              @unique
-  password    String
-  phoneNumber String
-  createdAt   DateTime            @default(now())
-  taskAssignedTotal Int              @default(0)
-  taskCompletedTotal Int          @default(0)
+  id                 String   @id @default(uuid())
+  name               String
+  email              String   @unique
+  password           String
+  phoneNumber        String
+  createdAt          DateTime @default(now())
+  taskAssignedTotal  Int      @default(0)
+  taskCompletedTotal Int      @default(0)
 
-  newTasks    NewTask[]
-  dailyTasks  DailyTaskInstance[]
+  assignedNewTasks   NewTask[]           @relation("NewTaskOperators")
+  assignedDailyTasks DailyTaskInstance[] @relation("DailyTaskOperators")
 
   @@map("operation")
 }
 
 model DefaultTask {
-  id             String               @id @default(uuid())
-  title          String
-  description    String?
-  isCompleted    Boolean              @default(false)
-  priority       Priority             @default(LOW)
-  status         TaskStatus          @default(PENDING)
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   adminId        String
-  admin          Admin                @relation(fields: [adminId], references: [id])
+  admin          Admin               @relation(fields: [adminId], references: [id])
   dailyInstances DailyTaskInstance[]
 
   @@map("default_tasks")
 }
 
 model DailyTaskInstance {
-  id            String                 @id @default(uuid())
-  taskDate      DateTime
-  isCompleted   Boolean                @default(false)
+  id          String     @id @default(uuid())
+  taskDate    DateTime
+  isCompleted Boolean    @default(false)
+  priority    Priority   @default(LOW)
+  status      TaskStatus @default(PENDING)
 
   defaultTaskId String
-  defaultTask   DefaultTask            @relation(fields: [defaultTaskId], references: [id])
+  defaultTask   DefaultTask @relation(fields: [defaultTaskId], references: [id], onDelete: Cascade)
 
-  operatorId    String
-  operator      OperationTeamMember   @relation(fields: [operatorId], references: [id])
+  operators OperationTeamMember[] @relation("DailyTaskOperators")
 
-  @@unique([taskDate, defaultTaskId, operatorId])
+  @@unique([taskDate, defaultTaskId])
   @@map("daily_task_instances")
 }
 
 model NewTask {
-  id           String               @id @default(uuid())
+  id           String     @id @default(uuid())
   title        String
   description  String?
-  assignedDate DateTime             @default(now())
+  assignedDate DateTime   @default(now())
   dueDate      DateTime?
-  isCompleted  Boolean              @default(false)
-  priority     Priority             @default(LOW)
-  status       TaskStatus          @default(PENDING)
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  isCompleted  Boolean    @default(false)
+  priority     Priority   @default(LOW)
+  status       TaskStatus @default(PENDING)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  adminId      String
-  admin        Admin                @relation(fields: [adminId], references: [id])
+  adminId String
+  admin   Admin  @relation(fields: [adminId], references: [id])
 
-  operatorId   String
-  operator     OperationTeamMember  @relation(fields: [operatorId], references: [id])
+  operators OperationTeamMember[] @relation("NewTaskOperators")
 
   @@map("new_tasks")
 }
