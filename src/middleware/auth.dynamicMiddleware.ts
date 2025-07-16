@@ -19,9 +19,9 @@ export const authDynamic = async (req: Request, res: Response, next: NextFunctio
       token,
       process.env.JWT_SECRET || "defaultsecret123"
     ) as JwtPayload;
-    if (decoded.role === "ADMIN") {
+    if (decoded.role.toUpperCase() === "ADMIN") {
       return authAdmin(req, res, next);
-    } else if (decoded.role === "OPERATION") {
+    } else if (decoded.role.toUpperCase() === "OPERATION") {
       return authOperation(req, res, next);
     } else {
       return res.status(403).json({ message: "Access denied. Invalid role." });
