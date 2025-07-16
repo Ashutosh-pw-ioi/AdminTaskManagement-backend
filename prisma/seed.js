@@ -6,7 +6,7 @@ async function main() {
     const operatorPassword = await bcrypt.hash('operatorpass', 10);
     const admin = await prisma.admin.create({
         data: {
-            number: 'ADM001',
+            name: 'ADM001',
             email: 'admin@example.com',
             password: adminPassword,
             gender: 'Male',

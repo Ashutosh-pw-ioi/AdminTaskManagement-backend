@@ -36,6 +36,7 @@ const handleLogin = async (req: Request, res: Response) => {
             email: user.email,
             userId: user.id,
             role: role,
+            name: user.name || "No Name Provided"
         }
 
         const token = jwt.sign(
@@ -76,5 +77,28 @@ const handleLogout = async (req: Request, res: Response) => {
         return res.status(500).json({ message: "Internal server error." });
     }
  }
+const checkUserAuthentication = async (req: Request, res: Response) => {
+    try {
+        const user = req.user;
 
-export { handleLogin, handleLogout };
+        if (!user) {
+            return res.status(401).json({ error: "Unauthorized: user not found in request" });
+        }
+
+        const { id, name, email, role } = user;
+
+        const reply = {
+            id,
+            name,
+            email,
+            role,
+            message: "User is authenticated",
+        };
+
+        res.status(200).json(reply);
+    } catch (error) {
+        console.error("Authentication check failed:", error);
+        res.status(500).json({ error: "Failed to verify authentication" });
+    }
+};
+export { handleLogin, handleLogout, checkUserAuthentication };
