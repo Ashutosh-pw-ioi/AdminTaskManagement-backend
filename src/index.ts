@@ -9,7 +9,9 @@ import adminRouter from "./routes/admin.route.js";
 const app = express()
 const PORT = process.env.PORT || 4000;
 
-app.use(cors({ origin: process.env.ORIGIN }));
+app.use(cors({ origin: process.env.ORIGIN,
+    credentials: true,
+ }));
 app.use(cookieParser());
 
 app.use(express.json());

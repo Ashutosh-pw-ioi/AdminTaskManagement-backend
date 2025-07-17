@@ -12,10 +12,16 @@ interface JwtPayload {
 declare global {
   namespace Express {
     interface Request {
-      user?: Pick<Admin, "id" | "email"> | Pick<OperationTeamMember, "id" | "email">;
+      user?: {
+        id: string;
+        email: string;
+        name: string;
+        role: "ADMIN" | "OPERATOR";
+      };
     }
   }
 }
+
 
 const authAdmin = async (req: Request, res: Response, next: NextFunction) => {
   const token = req.cookies.token;
@@ -35,20 +41,25 @@ const authAdmin = async (req: Request, res: Response, next: NextFunction) => {
 
     const user = await prisma.admin.findUnique({
       where: { email: decoded.emailId },
-      select: { id: true, email: true }
+      select: { id: true, email: true, name: true }
     });
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    req.user = user;
+    req.user = {
+      ...user,
+      role: "ADMIN",
+    };
+
     next();
   } catch (error) {
     console.error("Authentication error:", error);
     return res.status(401).json({ message: "Invalid token." });
   }
 };
+
 
 const authOperation = async (req: Request, res: Response, next: NextFunction) => {
   const token = req.cookies.token;
@@ -68,19 +79,24 @@ const authOperation = async (req: Request, res: Response, next: NextFunction) =>
 
     const user = await prisma.operationTeamMember.findUnique({
       where: { email: decoded.emailId },
-      select: { id: true, email: true }
+      select: { id: true, email: true, name: true }
     });
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    req.user = user;
+    req.user = {
+      ...user,
+      role: "OPERATOR",
+    };
+
     next();
   } catch (error) {
     console.error("Authentication error:", error);
     return res.status(401).json({ message: "Invalid token." });
   }
 };
+
 
 export { authAdmin, authOperation };

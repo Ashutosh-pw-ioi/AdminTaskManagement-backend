@@ -21,7 +21,7 @@ enum TaskStatus {
 
 model Admin {
   id          String   @id @default(uuid())
-  number      String
+  name      String
   email       String   @unique
   password    String
   gender      String
