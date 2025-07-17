@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../db/prisma.js";
 import { Priority, Prisma, TaskStatus } from "@prisma/client";
+import { startOfDay, endOfDay } from "date-fns";
 
 const createDefaultTask = async (req: Request, res: Response) => {
     try {
@@ -471,4 +472,234 @@ const deleteNewTask = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to delete new task" });
     }
 };
-export { createDefaultTask, createNewTask, createDailyTask, getDefaultTasks , updateDefaultTask , deleteDefaultTask, getTodayDailyTasksForAdmin,getOperators,updateDailyTask,getNewTask,updateNewTask,deleteNewTask};
+
+const getTodayTotalTasksForAdmin = async (req: Request, res: Response) => {
+  try {
+    const today = new Date();
+
+    const start = startOfDay(today);
+    const end = endOfDay(today);
+
+    const [dailyTaskCount, newTaskCount] = await Promise.all([
+      prisma.dailyTaskInstance.count({
+        where: {
+          taskDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+      }),
+      prisma.newTask.count({
+        where: {
+          createdAt: {
+            gte: start,
+            lte: end,
+          },
+        },
+      }),
+    ]);
+
+    const total = dailyTaskCount + newTaskCount;
+
+    return res.status(200).json({
+      success: true,
+      totalTasksToday: total,
+      dailyTaskCount,
+      newTaskCount,
+    });
+  } catch (error) {
+    console.error("Error fetching today's total tasks:", error);
+    return res.status(500).json({ error: "Failed to fetch today's total tasks" });
+  }
+};
+
+const getDailyStatusCount = async (req: Request, res: Response) => {
+  try {
+    const today = new Date();
+    const start = startOfDay(today);
+    const end = endOfDay(today);
+
+    const dailyStatusCounts = await prisma.dailyTaskInstance.groupBy({
+      by: ["status"],
+      where: {
+        taskDate: {
+          gte: start,
+          lte: end,
+        },
+      },
+      _count: {
+        status: true,
+      },
+    });
+
+    const newTaskStatusCounts = await prisma.newTask.groupBy({
+      by: ["status"],
+      where: {
+        createdAt: {
+          gte: start,
+          lte: end,
+        },
+      },
+      _count: {
+        status: true,
+      },
+    });
+
+    const totalStatusCounts = {
+      PENDING: 0,
+      IN_PROGRESS: 0,
+      COMPLETED: 0,
+    };
+
+    for (const entry of dailyStatusCounts) {
+      totalStatusCounts[entry.status as "PENDING" | "IN_PROGRESS" | "COMPLETED"] += entry._count.status;
+    }
+
+    for (const entry of newTaskStatusCounts) {
+      totalStatusCounts[entry.status as "PENDING" | "IN_PROGRESS" | "COMPLETED"] += entry._count.status;
+    }
+
+    return res.status(200).json({
+      success: true,
+      statusCounts: totalStatusCounts,
+    });
+
+  } catch (error) {
+    console.error("Error fetching daily status count:", error);
+    return res.status(500).json({ error: "Failed to fetch daily status count" });
+  }
+};
+
+const getPriorityCount = async (req: Request, res: Response) => {
+  try {
+    const today = new Date();
+    const start = startOfDay(today);
+    const end = endOfDay(today);
+
+    // Daily tasks grouped by priority
+    const dailyPriorityCounts = await prisma.dailyTaskInstance.groupBy({
+      by: ["priority"],
+      where: {
+        taskDate: {
+          gte: start,
+          lte: end,
+        },
+      },
+      _count: {
+        priority: true,
+      },
+    });
+
+    // New tasks grouped by priority
+    const newPriorityCounts = await prisma.newTask.groupBy({
+      by: ["priority"],
+      where: {
+        createdAt: {
+          gte: start,
+          lte: end,
+        },
+      },
+      _count: {
+        priority: true,
+      },
+    });
+
+    // Initialize totals
+    const totalPriorityCounts = {
+      LOW: 0,
+      MEDIUM: 0,
+      HIGH: 0,
+    };
+
+    // Add daily task counts
+    for (const entry of dailyPriorityCounts) {
+      totalPriorityCounts[entry.priority as "LOW" | "MEDIUM" | "HIGH"] += entry._count.priority;
+    }
+
+    // Add new task counts
+    for (const entry of newPriorityCounts) {
+      totalPriorityCounts[entry.priority as "LOW" | "MEDIUM" | "HIGH"] += entry._count.priority;
+    }
+
+    return res.status(200).json({
+      success: true,
+      priorityCounts: totalPriorityCounts,
+    });
+  } catch (error) {
+    console.error("Error fetching priority count:", error);
+    return res.status(500).json({ error: "Failed to fetch priority count" });
+  }
+};
+
+const getAssigneeWorkload = async (req: Request, res: Response) => {
+  try {
+    const today = new Date();
+    const start = startOfDay(today);
+    const end = endOfDay(today);
+
+    // Fetch all operators
+    const operators = await prisma.operationTeamMember.findMany({
+      select: {
+        id: true,
+        name: true,
+        assignedDailyTasks: {
+          where: {
+            taskDate: {
+              gte: start,
+              lte: end,
+            },
+          },
+          select: {
+            status: true,
+          },
+        },
+        assignedNewTasks: {
+          where: {
+            assignedDate: {
+              gte: start,
+              lte: end,
+            },
+          },
+          select: {
+            status: true,
+          },
+        },
+      },
+    });
+
+    const result = operators.map((operator) => {
+      const statusCount = {
+        PENDING: 0,
+        IN_PROGRESS: 0,
+        COMPLETED: 0,
+      };
+
+      [...operator.assignedDailyTasks, ...operator.assignedNewTasks].forEach(
+        (task) => {
+          statusCount[task.status]++;
+        }
+      );
+
+      const total =
+        statusCount.PENDING + statusCount.IN_PROGRESS + statusCount.COMPLETED;
+
+      return {
+        name: operator.name,
+        pending: statusCount.PENDING,
+        progress: statusCount.IN_PROGRESS,
+        completed: statusCount.COMPLETED,
+        total,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error fetching workload data:", error);
+    return res.status(500).json({ error: "Failed to fetch assignee workload" });
+  }
+};
+
+export { createDefaultTask, createNewTask, createDailyTask, getDefaultTasks , updateDefaultTask , deleteDefaultTask, getTodayDailyTasksForAdmin,getOperators,updateDailyTask,getNewTask,updateNewTask,deleteNewTask,getTodayTotalTasksForAdmin,getDailyStatusCount ,getPriorityCount,getAssigneeWorkload };

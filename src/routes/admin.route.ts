@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authAdmin } from "../middleware/auth.middleware.js";
-import { createDefaultTask, createNewTask,createDailyTask, getDefaultTasks, updateDefaultTask, deleteDefaultTask, getTodayDailyTasksForAdmin, getOperators, updateDailyTask, getNewTask, updateNewTask, deleteNewTask,} from "../controller/admin.controller.js";
+import { createDefaultTask, createNewTask,createDailyTask, getDefaultTasks, updateDefaultTask, deleteDefaultTask, getTodayDailyTasksForAdmin, getOperators, updateDailyTask, getNewTask, updateNewTask, deleteNewTask, getTodayTotalTasksForAdmin, getDailyStatusCount, getPriorityCount, getAssigneeWorkload,} from "../controller/admin.controller.js";
 
 
 const adminRouter = Router();
@@ -17,6 +17,12 @@ adminRouter.patch("/updateDailyTask/:id", authAdmin, updateDailyTask);
 adminRouter.get("/getNewTask",authAdmin,getNewTask);
 adminRouter.patch("/updateNewTask/:id",authAdmin,updateNewTask)
 adminRouter.delete("/deleteNewTask/:id",authAdmin,deleteNewTask);
+adminRouter.get("/getTotalTasks",authAdmin,getTodayTotalTasksForAdmin);
+adminRouter.get("/getDailyStatusCount",authAdmin,getDailyStatusCount);
+adminRouter.get("/getPriorityCount",authAdmin,getPriorityCount);
+adminRouter.get("/getAssigneeWorkload", authAdmin, getAssigneeWorkload );
+
+
 
 
 export default adminRouter;
