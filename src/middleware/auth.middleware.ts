@@ -35,7 +35,7 @@ const authAdmin = async (req: Request, res: Response, next: NextFunction) => {
       process.env.JWT_SECRET || "defaultsecret123"
     ) as JwtPayload;
 
-    if (decoded.role !== "ADMIN") {
+    if (decoded.role.toUpperCase() !== "ADMIN") {
       return res.status(403).json({ message: "Access denied: Not an admin." });
     }
 
@@ -73,7 +73,7 @@ const authOperation = async (req: Request, res: Response, next: NextFunction) =>
       process.env.JWT_SECRET || "defaultsecret123"
     ) as JwtPayload;
 
-    if (decoded.role !== "OPERATION") {
+    if (decoded.role.toUpperCase() !== "OPERATION") {
       return res.status(403).json({ message: "Access denied: Not an operation team member." });
     }
 
