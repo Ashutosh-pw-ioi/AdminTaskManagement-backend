@@ -258,7 +258,57 @@ const getTodayDailyTasksForAdmin = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to fetch daily tasks" });
     }
 };
+const getTodayTotalTasksCompletion = async (req: Request, res: Response) => {
+    try {
+        const adminId = req.user?.id;
 
+        if (!adminId) {
+            return res.status(401).json({ error: "Unauthorized. Admin ID missing." });
+        }
+
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        const tomorrowStart = new Date(todayStart);
+        tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+        const completedDailyTasks = await prisma.dailyTaskInstance.count({
+            where: {
+                status: TaskStatus.COMPLETED,
+                taskDate: {
+                    gte: todayStart,
+                    lt: tomorrowStart,
+                },
+                defaultTask: {
+                    adminId,
+                },
+            },
+        });
+
+        const completedNewTasks = await prisma.newTask.count({
+            where: {
+                status: TaskStatus.COMPLETED,
+                createdAt: {
+                    gte: todayStart,
+                    lt: tomorrowStart,
+                },
+                adminId,
+            },
+        });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                completedDailyTasks,
+                completedNewTasks,
+                totalCompletedTasks: completedDailyTasks + completedNewTasks
+            },
+        });
+    } catch (error) {
+        console.error("Error fetching today’s task completion:", error);
+        res.status(500).json({ error: "Failed to fetch today’s task completion." });
+    }
+};
 
 const getOperators = async (req: Request, res: Response) => {
     try {
@@ -746,4 +796,4 @@ const getAssigneeWorkload = async (req: Request, res: Response) => {
   }
 };
 
-export { createDefaultTask, createNewTask, createDailyTask, getDefaultTasks , updateDefaultTask , deleteDefaultTask, getTodayDailyTasksForAdmin,getOperators,updateDailyTask,getNewTask,updateNewTask,deleteNewTask,getTodayTotalTasksForAdmin,getDailyStatusCount ,getPriorityCount,getAssigneeWorkload,deleteDailyTask };
+export { createDefaultTask, createNewTask, createDailyTask, getDefaultTasks , updateDefaultTask , deleteDefaultTask, getTodayDailyTasksForAdmin,getOperators,updateDailyTask,getNewTask,updateNewTask,deleteNewTask,getTodayTotalTasksForAdmin,getDailyStatusCount ,getPriorityCount,getAssigneeWorkload,deleteDailyTask ,getTodayTotalTasksCompletion};
