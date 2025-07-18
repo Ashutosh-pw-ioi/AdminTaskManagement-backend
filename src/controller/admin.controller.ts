@@ -235,7 +235,13 @@ const getTodayDailyTasksForAdmin = async (req: Request, res: Response) => {
             },
             include: {
                 defaultTask: true,
-                operators: true,
+                operators: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true
+                    }
+                }
             },
             orderBy: {
                 taskDate: "asc",
@@ -252,6 +258,7 @@ const getTodayDailyTasksForAdmin = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to fetch daily tasks" });
     }
 };
+
 
 const getOperators = async (req: Request, res: Response) => {
     try {
