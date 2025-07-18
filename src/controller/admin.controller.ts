@@ -277,10 +277,11 @@ const getOperators = async (req: Request, res: Response) => {
 };
 
 
+
 const updateDailyTask = async (req: Request, res: Response) => {
     try {
         const dailyTaskId = req.params.id;
-        const { priority, operatorIds } = req.body;
+        const { priority, operatorIds, status } = req.body;
 
         if (!dailyTaskId) {
             return res.status(400).json({ error: "Daily task ID is required" });
@@ -301,6 +302,13 @@ const updateDailyTask = async (req: Request, res: Response) => {
                 return res.status(400).json({ error: "Invalid priority value" });
             }
             dataToUpdate.priority = priority;
+        }
+
+        if (status) {
+            if (!Object.values(TaskStatus).includes(status)) {
+                return res.status(400).json({ error: "Invalid status value" });
+            }
+            dataToUpdate.status = status;
         }
 
         if (Array.isArray(operatorIds)) {
@@ -328,6 +336,7 @@ const updateDailyTask = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to update daily task" });
     }
 };
+
 
 
 const getNewTask = async (req: Request, res: Response) => {
