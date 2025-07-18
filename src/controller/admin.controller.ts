@@ -337,7 +337,35 @@ const updateDailyTask = async (req: Request, res: Response) => {
     }
 };
 
+const deleteDailyTask = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
 
+    if (!id) {
+      return res.status(400).json({ error: "Task ID is required" });
+    }
+
+    const existingTask = await prisma.dailyTaskInstance.findUnique({
+      where: { id },
+    });
+
+    if (!existingTask) {
+      return res.status(404).json({ error: "Daily task not found" });
+    }
+
+    await prisma.dailyTaskInstance.delete({
+      where: { id },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Daily task deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting daily task:", error);
+    res.status(500).json({ error: "Failed to delete daily task" });
+  }
+};
 
 const getNewTask = async (req: Request, res: Response) => {
     try {
@@ -711,4 +739,4 @@ const getAssigneeWorkload = async (req: Request, res: Response) => {
   }
 };
 
-export { createDefaultTask, createNewTask, createDailyTask, getDefaultTasks , updateDefaultTask , deleteDefaultTask, getTodayDailyTasksForAdmin,getOperators,updateDailyTask,getNewTask,updateNewTask,deleteNewTask,getTodayTotalTasksForAdmin,getDailyStatusCount ,getPriorityCount,getAssigneeWorkload };
+export { createDefaultTask, createNewTask, createDailyTask, getDefaultTasks , updateDefaultTask , deleteDefaultTask, getTodayDailyTasksForAdmin,getOperators,updateDailyTask,getNewTask,updateNewTask,deleteNewTask,getTodayTotalTasksForAdmin,getDailyStatusCount ,getPriorityCount,getAssigneeWorkload,deleteDailyTask };
