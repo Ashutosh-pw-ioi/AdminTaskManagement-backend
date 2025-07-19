@@ -5,84 +5,95 @@ import { startOfDay, endOfDay } from "date-fns";
 
 
 const getTodayDailyTasksForOperator = async (req: Request, res: Response) => {
-    try {
-        const operatorId = req.user?.id;
-
-        if (!operatorId) {
-            return res.status(401).json({ error: "Unauthorized: Operator ID not found" });
-        }
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Start of today
-
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1); // Start of next day
-
-        const dailyTasks = await prisma.dailyTaskInstance.findMany({
-            where: {
-                taskDate: {
-                    gte: today,
-                    lt: tomorrow,
-                },
-                operators: {
-                    some: {
-                        id: operatorId,
-                    },
-                },
-            },
-            include: {
-                defaultTask: true,
-            },
-        });
-
-        res.status(200).json({ success: true, tasks: dailyTasks });
-    } catch (error) {
-        console.error("Error fetching daily tasks:", error);
-        res.status(500).json({ error: "Failed to fetch daily tasks" });
+  try {
+    const operatorId = req.user?.id;
+    if (!operatorId) {
+      return res.status(401).json({ error: "Unauthorized: Operator ID not found" });
     }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const dailyTasks = await prisma.dailyTaskInstance.findMany({
+      where: {
+        taskDate: { gte: today, lt: tomorrow },
+        operators: { some: { id: operatorId } },
+      },
+      include: {
+        defaultTask: {
+          include: {
+            admin: {
+              select: {
+                id: true,
+                name: true,
+                email: true, 
+              },
+            },
+          },
+        },
+      },
+    });
+
+    res.status(200).json({ success: true, tasks: dailyTasks });
+  } catch (error) {
+    console.error("Error fetching daily tasks:", error);
+    res.status(500).json({ error: "Failed to fetch daily tasks" });
+  }
 };
 
 
+
 const getNewTasksForOperator = async (req: Request, res: Response) => {
-    try {
-        const operatorId = req.user?.id;
+  try {
+    const operatorId = req.user?.id;
 
-        if (!operatorId) {
-            return res.status(401).json({ error: "Unauthorized: Operator ID not found" });
-        }
-
-        const today = startOfDay(new Date());
-
-        const newTasks = await prisma.newTask.findMany({
-            where: {
-                operators: {
-                    some: {
-                        id: operatorId,
-                    },
-                },
-                OR: [
-                    {
-                        assignedDate: {
-                            gte: today,
-                        },
-                    },
-                    {
-                        dueDate: {
-                            gte: today,
-                        },
-                    },
-                ],
-            },
-            orderBy: {
-                assignedDate: "desc",
-            },
-        });
-
-        res.status(200).json({ success: true, tasks: newTasks });
-    } catch (error) {
-        console.error("Error fetching new tasks:", error);
-        res.status(500).json({ error: "Failed to fetch new tasks" });
+    if (!operatorId) {
+      return res.status(401).json({ error: "Unauthorized: Operator ID not found" });
     }
+
+    const today = startOfDay(new Date());
+
+    const newTasks = await prisma.newTask.findMany({
+      where: {
+        operators: {
+          some: {
+            id: operatorId,
+          },
+        },
+        OR: [
+          {
+            assignedDate: {
+              gte: today,
+            },
+          },
+          {
+            dueDate: {
+              gte: today,
+            },
+          },
+        ],
+      },
+      orderBy: {
+        assignedDate: "desc",
+      },
+      include: {
+        admin: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    res.status(200).json({ success: true, tasks: newTasks });
+  } catch (error) {
+    console.error("Error fetching new tasks:", error);
+    res.status(500).json({ error: "Failed to fetch new tasks" });
+  }
 };
 
 
