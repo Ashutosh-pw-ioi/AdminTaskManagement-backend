@@ -424,6 +424,7 @@ const deleteDailyTask = async (req: Request, res: Response) => {
   }
 };
 
+
 const getNewTask = async (req: Request, res: Response) => {
     try {
         const adminId = req.user?.id;
@@ -432,9 +433,23 @@ const getNewTask = async (req: Request, res: Response) => {
             return res.status(401).json({ error: "Unauthorized. Admin ID missing." });
         }
 
+        const today = startOfDay(new Date()); 
+
         const tasks = await prisma.newTask.findMany({
             where: {
                 adminId: adminId,
+                OR: [
+                    {
+                        assignedDate: {
+                            gte: today,
+                        },
+                    },
+                    {
+                        dueDate: {
+                            gte: today,
+                        },
+                    },
+                ],
             },
             include: {
                 operators: {
@@ -459,6 +474,7 @@ const getNewTask = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to fetch new tasks" });
     }
 };
+
 
 const updateNewTask = async (req: Request, res: Response) => {
     try {

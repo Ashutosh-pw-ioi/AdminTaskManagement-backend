@@ -41,6 +41,8 @@ const getTodayDailyTasksForOperator = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to fetch daily tasks" });
     }
 };
+
+
 const getNewTasksForOperator = async (req: Request, res: Response) => {
     try {
         const operatorId = req.user?.id;
@@ -49,6 +51,8 @@ const getNewTasksForOperator = async (req: Request, res: Response) => {
             return res.status(401).json({ error: "Unauthorized: Operator ID not found" });
         }
 
+        const today = startOfDay(new Date());
+
         const newTasks = await prisma.newTask.findMany({
             where: {
                 operators: {
@@ -56,6 +60,21 @@ const getNewTasksForOperator = async (req: Request, res: Response) => {
                         id: operatorId,
                     },
                 },
+                OR: [
+                    {
+                        assignedDate: {
+                            gte: today,
+                        },
+                    },
+                    {
+                        dueDate: {
+                            gte: today,
+                        },
+                    },
+                ],
+            },
+            orderBy: {
+                assignedDate: "desc",
             },
         });
 
@@ -65,6 +84,7 @@ const getNewTasksForOperator = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to fetch new tasks" });
     }
 };
+
 
 const updateDailyTask = async (req: Request, res: Response) => {
     try {
