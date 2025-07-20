@@ -16,7 +16,7 @@ declare global {
         id: string;
         email: string;
         name: string;
-        role: "ADMIN" | "OPERATOR";
+        role: "ADMIN" | "OPERATION";
       };
     }
   }
@@ -88,7 +88,7 @@ const authOperation = async (req: Request, res: Response, next: NextFunction) =>
 
     req.user = {
       ...user,
-      role: "OPERATOR",
+      role: "OPERATION",
     };
 
     next();
