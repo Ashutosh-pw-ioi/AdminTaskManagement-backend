@@ -22,6 +22,10 @@ app.use('/api/auth',authRouter)
 app.use('/api/admin', adminRouter);
 app.use('/api/operator', operatorRouter);
 
+app.get("/", (req, res) => {
+    res.status(200).json("Server running!");
+});
+
 app.listen(PORT,()=>{
     console.log(`Server running on http://localhost:${PORT}`);
 });
