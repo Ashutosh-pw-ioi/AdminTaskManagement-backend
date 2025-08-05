@@ -23,7 +23,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/operator', operatorRouter);
 
 app.get("/", (req, res) => {
-    res.status(200).json("Server running!");
+    res.status(200).json({"message": "Server running!"});
 });
 
 app.listen(PORT,()=>{
